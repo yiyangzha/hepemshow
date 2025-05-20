@@ -9,8 +9,7 @@
 #include <iomanip>
 #include <fstream>
 
-
-void WriteResults(struct Results& res, int numEvents) {
+void WriteResults(struct Results& res, int numEvents, int seed) {
   // for the histograms, bring them to be mean per event and write
   const G4double norm = numEvents > 0 ? 1.0/numEvents : 1.0;
   res.fEdepPerLayer.Scale(norm);
@@ -18,8 +17,8 @@ void WriteResults(struct Results& res, int numEvents) {
   res.fElPosTrackLenghtPerLayer.Scale(norm);
 
   res.fEdepPerLayer.WriteToFile(false);
-
-  std::ofstream edeps("edeps");
+  std::ofstream edeps("edeps_" + std::to_string(seed));
+  //std::ofstream edeps("edeps");
   for(int i=0; i<50; i++){
      edeps << std::setprecision(14) << res.fEdepPerLayer_Acc[i].getMean() << " " << res.fEdepPerLayer_Acc[i].getMeanSq();
      #if CODI_FORWARD

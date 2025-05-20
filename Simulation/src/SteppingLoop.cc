@@ -20,6 +20,11 @@
 #include "Box.hh"
 #include "Results.hh"
 
+template<typename Expr>
+inline G4double stop_grad(const Expr& x) {
+  //return G4double(x);
+  return G4double(GET_VALUE(x));
+}
 
 
 
@@ -185,7 +190,10 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     //
     // take the shortest from the geometry and physics step limits as current (straight line) step length
     // along the original direction and see if the post-step point is on-boundary
-    G4double stepLength = distToBoundary;
+    //G4double stepLength = distToBoundary;
+    //G4double stepLength = stop_grad(distToBoundary) + (distToPhysics - stop_grad(distToPhysics)); //fix1
+    G4double stepLength = stop_grad(distToBoundary) ; //fix2
+
     onBoundary        = true;
     if (distToPhysics < distToBoundary) {
       stepLength = distToPhysics;

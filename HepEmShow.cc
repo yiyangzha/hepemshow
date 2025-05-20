@@ -146,7 +146,7 @@ int main(int argc, char* argv[]) {
 
 
   // here we summarise the results and write them to file (the histograms) or to the screen
-  WriteResults(theResult, theInputParameters.fPrimaryAndEvents.fNumEvents);
+  WriteResults(theResult, theInputParameters.fPrimaryAndEvents.fNumEvents, GET_VALUE(theInputParameters.fPrimaryAndEvents.fRandomSeed));
 
 
   // delete objects
