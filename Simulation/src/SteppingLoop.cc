@@ -19,12 +19,21 @@
 #include "Geometry.hh"
 #include "Box.hh"
 #include "Results.hh"
+#include <fstream>
 
-template<typename Expr>
-inline G4double stop_grad(const Expr& x) {
-  //return G4double(x);
-  return G4double(GET_VALUE(x));
-}
+#include "codi.hpp"
+
+// Static member definitions for SteppingLoop jacobian output
+//std::ofstream SteppingLoop::_stmtJacobianOut;
+int           SteppingLoop::_lastTrackID       = -1;
+bool          SteppingLoop::_jacobianStreamOpen = false;
+
+
+static std::ofstream debugFile("electron_debug.csv");
+static bool debugFileInitialized = [](){
+  debugFile << "step,charge,trackID,parentID,localX,localX_dot,globalX,globalX_dot,distToBoundary,distToBoundary_dot,safety,safety_dot,preStepSafety,preStepSafety_dot,distToPhysics,distToPhysics_dot,stepLength,stepLength_dot,pStepLength,pStepLength_dot,KE,KE_dot,winnerIdx\n";
+  return true;
+}();
 
 
 
@@ -61,13 +70,13 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
     G4double* curDirection   = theTrack->GetDirection();
     // set the local position = global position (will be local after CalculateDistanceToOut)
     Set3Vect(localPosition, globalPosition);
-    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
+    const G4double distToBoundary = stop_grad(theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs));
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
       return;
     }
     // calculate pre-step point safety
-    const G4double preStepSafety  = currentVolume->DistanceToOut(localPosition);
+    const G4double preStepSafety  = stop_grad(currentVolume->DistanceToOut(localPosition));
     bool onBoundary = (preStepSafety == 0.0);
     // get the material-cuts couple index from the volume
     const int indxMaterial = currentVolume->GetMaterialIndx();
@@ -117,12 +126,30 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
     if (theTLData.GetNumSecondaryElectronTrack() + theTLData.GetNumSecondaryGammaTrack() > 0 ) {
       StackSecondaries(theTLData, theTrackStack, *theTrack);
     }
+
+    #if CODI_FORWARD
+      debugFile << numStep << ","
+            << theTrack->GetCharge() << ","
+            << theTrack->GetID() << ","
+            << theTrack->GetParentID() << ","
+            << GET_VALUE(localPosition[0]) << "," << GET_DOTVALUE(localPosition[0]) << ","
+            << GET_VALUE(globalPosition[0]) << "," << GET_DOTVALUE(globalPosition[0]) << ","
+            << GET_VALUE(distToBoundary) << "," << GET_DOTVALUE(distToBoundary) << ","
+            << "nan" << "," << "nan" << ","
+            << GET_VALUE(preStepSafety) << "," << GET_DOTVALUE(preStepSafety) << ","
+            << GET_VALUE(distToPhysics) << "," << GET_DOTVALUE(distToPhysics) << ","
+            << GET_VALUE(stepLength) << "," << GET_DOTVALUE(stepLength) << ","
+            << "nan" << "," << "nan" << ","
+            << GET_VALUE(theTrack->GetEKin()) << "," << GET_DOTVALUE(theTrack->GetEKin()) << ","
+            << theTrack->GetWinnerProcessIndex() << "\n" ;
+    #endif
     // call the SteppingAction (whenever a step was done in the calorimeter)
     SteppingAction(theResult, *theTrack, currentVolume, stepLength, indxLayer, indxAbs, eventID, numStep);
 
     ++numStep;
   }
 }
+
 
 
 void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theState, TrackStack& theTrackStack, Geometry& theGeometry, Results& theResult, int eventID) {
@@ -141,7 +168,11 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
   int  indxAbs       = -1;
   G4double  localPosition[3];
   bool wasOnBoundary = false;
-//  bool wasPushed     = false;
+  //  bool wasPushed     = false;
+
+  if (!_jacobianStreamOpen) {
+    _jacobianStreamOpen = true;
+  }
 
   // keep tracking while the kinetic energy drops to zero (i.e. e-/e+ lose all its energy; e+ annihilates)
   // unless the track is going out of the Calorimeter
@@ -154,14 +185,14 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     G4double* curDirection   = theTrack->GetDirection();
     // set the local position = global position (will be local after CalculateDistanceToOut)
     Set3Vect(localPosition, globalPosition);
-    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
+    const G4double distToBoundary = stop_grad(theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs));
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
       return;
     }
     // at the pre-step point: calculate safety and check if on-boundary (use only if we do not know that the
     // previous step ended up on boundary i.e. use only in the very first or pushed steps)
-    G4double safety   = currentVolume->DistanceToOut(localPosition);
+    G4double safety   = stop_grad(currentVolume->DistanceToOut(localPosition));
     bool onBoundary = numStep == 0 ? (safety<5.0E-10) : wasOnBoundary;
     const G4double preStepSafety = onBoundary ? 0.0 : safety;
 
@@ -192,8 +223,14 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     // along the original direction and see if the post-step point is on-boundary
     //G4double stepLength = distToBoundary;
     //G4double stepLength = stop_grad(distToBoundary) + (distToPhysics - stop_grad(distToPhysics)); //fix1
-    G4double stepLength = stop_grad(distToBoundary) ; //fix2
+    
+    //In general, you can call the tape and set to passive, then set to active again
+    //auto &tape = G4double::getTape();
+    //tape.setPassive();
+    //G4double stepLength = distToBoundary; 
+    //tape.setActive();
 
+    G4double stepLength = distToBoundary;
     onBoundary        = true;
     if (distToPhysics < distToBoundary) {
       stepLength = distToPhysics;
@@ -238,6 +275,23 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     // physical step length stays zero when MSC is not active as physical = geometrical in that case)
     const G4double pStepLength = theMSCData->fTrueStepLength > 0.0 ? theMSCData->fTrueStepLength : stepLength;
 
+    // Debug CSV write (single-line, all quantities)
+    #if CODI_FORWARD
+      debugFile << numStep << ","
+                << theTrack->GetCharge() << ","
+                << theTrack->GetID() << ","
+                << theTrack->GetParentID() << ","
+                << GET_VALUE(localPosition[0]) << "," << GET_DOTVALUE(localPosition[0]) << ","
+                << GET_VALUE(globalPosition[0]) << "," << GET_DOTVALUE(globalPosition[0]) << ","
+                << GET_VALUE(distToBoundary) << "," << GET_DOTVALUE(distToBoundary) << ","
+                << GET_VALUE(safety) << "," << GET_DOTVALUE(safety) << ","
+                << GET_VALUE(preStepSafety) << "," << GET_DOTVALUE(preStepSafety) << ","
+                << GET_VALUE(distToPhysics) << "," << GET_DOTVALUE(distToPhysics) << ","
+                << GET_VALUE(stepLength) << "," << GET_DOTVALUE(stepLength) << ","
+                << GET_VALUE(pStepLength) << "," << GET_DOTVALUE(pStepLength) << ","
+                << GET_VALUE(theTrack->GetEKin()) << "," << GET_DOTVALUE(theTrack->GetEKin()) << ","
+                << theTrack->GetWinnerProcessIndex() << "\n" ;
+    #endif
     // get the displacement and check if we need to apply (should not if the energy is zero but ok keep its simply)
     // we apply it if its length is lonegr than a minimum and we are not on boudnry (i.e. the current post-step point)
     if (!onBoundary) {
@@ -282,7 +336,11 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     SteppingAction(theResult, *theTrack, currentVolume, pStepLength, indxLayer, indxAbs, eventID, numStep);
 
     ++numStep;
+    int    trackID  = theTrack->GetID();
+    int _lastTrackID; 
   }
+
+
 }
 
 

@@ -92,6 +92,10 @@ class SteppingLoop {
 
 public:
 
+  static std::ofstream     _stmtJacobianOut;
+  static int               _lastTrackID;
+  static bool              _jacobianStreamOpen;
+
   /** Stepping loop for simulating the entire history of a \f$\gamma\f$ track.
    *
    * The initial state of the \f$\gamma\f$ track is provided in the `G4HepEmGammaTrack` field of `theTLData` input argument by the caller.
@@ -127,6 +131,7 @@ public:
 
 private:
   SteppingLoop() = delete;
+
 
   /** Auxiliary method that pushes the secondary track(s), produced by physics interactions at the post-step point (if any), into the track stack.
    *

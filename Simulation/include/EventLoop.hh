@@ -1,4 +1,5 @@
 #include "ad_type.h"
+#include "tapeOutput.hpp"
 
 #ifndef EVENTLOOP_HH
 #define EVENTLOOP_HH

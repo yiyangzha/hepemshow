@@ -19,6 +19,8 @@
 #include <ctime>
 #include <iostream>
 
+codi::TapeOutput<G4double> to = {};
+
 
 void EventLoop::ProcessEvents(G4HepEmTLData& theTLData, G4HepEmState& theState, PrimaryGenerator& thePrimaryGenerator, Geometry& theGeometry, Results& theResult, int numEventToSimulate, int verbosity) {
   //
@@ -169,6 +171,8 @@ void EventLoop::BeginOfEventAction(Results& theResult, int eventID, const G4HepE
     theResult.pParticleEnergy = thePrimaryGenerator.GetKinEnergy();
     G4double::getTape().registerInput(theResult.pParticleEnergy);
     thePrimaryGenerator.SetKinEnergy(theResult.pParticleEnergy);
+    std::string filename = "run_" + std::to_string(eventID); 
+    to.startStatementRecording(filename, true, true, true, true); //this records the tape: jacobians. but it misses the adjoint values during tape evaluation
   #endif
 
   theResult.fPerEventRes.fEdepAbs        = 0.0;
@@ -228,6 +232,8 @@ void EventLoop::EndOfEventAction(Results& theResult, int eventID) {
   theResult.fNumStepsElPos2 += dum*dum;
 
   #ifdef CODI_REVERSE
+    to.stopStatementRecording();
+
     for(int i=0; i<50; i++){
        G4double::getTape().registerOutput(theResult.fEdepPerLayer_CurrentEvent.GetY()[i]);
     }
