@@ -130,6 +130,7 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
       StackSecondaries(theTLData, theTrackStack, *theTrack);
     }
 
+    /*
     #if CODI_FORWARD
       debugFile << numStep << ","
             << theTrack->GetCharge() << ","
@@ -146,6 +147,7 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
             << GET_VALUE(theTrack->GetEKin()) << "," << GET_DOTVALUE(theTrack->GetEKin()) << ","
             << theTrack->GetWinnerProcessIndex() << "\n" ;
     #endif
+    */
     // call the SteppingAction (whenever a step was done in the calorimeter)
     SteppingAction(theResult, *theTrack, currentVolume, stepLength, indxLayer, indxAbs, eventID, numStep);
 
@@ -281,6 +283,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     const G4double pStepLength = theMSCData->fTrueStepLength > 0.0 ? theMSCData->fTrueStepLength : stepLength;
 
     // Debug CSV write (single-line, all quantities)
+    /*
     #if CODI_FORWARD
       debugFile << numStep << ","
                 << theTrack->GetCharge() << ","
@@ -297,6 +300,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
                 << GET_VALUE(theTrack->GetEKin()) << "," << GET_DOTVALUE(theTrack->GetEKin()) << ","
                 << theTrack->GetWinnerProcessIndex() << "\n" ;
     #endif
+    */
     // get the displacement and check if we need to apply (should not if the energy is zero but ok keep its simply)
     // we apply it if its length is lonegr than a minimum and we are not on boudnry (i.e. the current post-step point)
     if (!onBoundary) {
