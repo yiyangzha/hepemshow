@@ -38,8 +38,8 @@ void WriteResults(struct Results& res, int numEvents, int seed) {
   #endif
 
 
-  res.fGammaTrackLenghtPerLayer.WriteToFile(false);
-  res.fElPosTrackLenghtPerLayer.WriteToFile(false);
+  //res.fGammaTrackLenghtPerLayer.WriteToFile(false);
+  //res.fElPosTrackLenghtPerLayer.WriteToFile(false);
 
   //
   res.fEdepAbs  = res.fEdepAbs*norm;
