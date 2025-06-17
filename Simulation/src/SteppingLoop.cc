@@ -25,6 +25,13 @@
 
 // Static member definitions for SteppingLoop jacobian output
 //std::ofstream SteppingLoop::_stmtJacobianOut;
+
+template<typename Expr>
+inline G4double stop_grad(const Expr& x) {
+  //return G4double(x);
+  return G4double(GET_VALUE(x));
+}
+
 int           SteppingLoop::_lastTrackID       = -1;
 bool          SteppingLoop::_jacobianStreamOpen = false;
 
