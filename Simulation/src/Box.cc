@@ -8,6 +8,11 @@
 #include <sstream>
 #include <cmath>
 
+template<typename Expr>
+inline G4double stop_grad(const Expr& x) {
+  return G4double(x);
+  //return G4double(GET_VALUE(x));
+}
 
 Box::Box (const std::string& name, int indxMat, G4double pX, G4double pY, G4double pZ)
 : fName(name),
@@ -62,28 +67,28 @@ G4double Box::GetHalfLength(int idx) const {
 // p should be in local coordinates
 // returns zero if p is outside of the box or within tolerance
 G4double Box::DistanceToOut(G4double* p, G4double *v) const {
+  const G4double vx = stop_grad(v[0]);
+  const G4double vy = stop_grad(v[1]);
+  const G4double vz = stop_grad(v[2]);
   // Check if point is not inside and traveling away: zero
   // Note: eitehr in surafece or outside
-  if ((std::abs(p[0]) - fDx) >= -fDelta && p[0]*v[0] > 0) {
-    return 0.0;
+  if ((std::abs(stop_grad(p[0])) - fDx) >= -fDelta && stop_grad(p[0]*v[0]) > 0) {
+    return 0.0 + (G4double)((std::copysign(fDx,vx) - stop_grad(p[0]))/vx) - stop_grad((G4double)((std::copysign(fDx,vx) - stop_grad(p[0]))/vx));
   }
-  if ((std::abs(p[1]) - fDy) >= -fDelta && p[1]*v[1] > 0) {
-    return 0.0;
+  if ((std::abs(stop_grad(p[1])) - fDy) >= -fDelta && stop_grad(p[1]*v[1]) > 0) {
+    return 0.0 + (G4double)((std::copysign(fDy,vy) - stop_grad(p[1]))/vy) - stop_grad((G4double)((std::copysign(fDy,vy) - stop_grad(p[1]))/vy));
   }
-  if ((std::abs(p[2]) - fDz) >= -fDelta && p[2]*v[2] > 0) {
-    return 0.0;
+  if ((std::abs(stop_grad(p[2])) - fDz) >= -fDelta && stop_grad(p[2]*v[2]) > 0) {
+    return 0.0 + (G4double)((std::copysign(fDz,vz) - stop_grad(p[2]))/vz) - stop_grad((G4double)((std::copysign(fDz,vz) - stop_grad(p[2]))/vz));
   }
   // Find intersection
   //
-  const G4double vx = v[0];
-  const G4double tx = (vx == 0) ? 1.0E+20 : (G4double)((std::copysign(fDx,vx) - p[0])/vx);
+  const G4double tx = (vx == 0) ? 1.0E+20 : (G4double)((std::copysign(fDx,vx) - stop_grad(p[0]))/vx);
   //
-  const G4double vy = v[1];
-  const G4double ty = (vy == 0) ? tx : (G4double)((std::copysign(fDy,vy) - p[1])/vy);
+  const G4double ty = (vy == 0) ? tx : (G4double)((std::copysign(fDy,vy) - stop_grad(p[1]))/vy);
   const G4double txy = std::min(tx,ty);
   //
-  const G4double vz = v[2];
-  const G4double tz = (vz == 0) ? txy : (G4double)((std::copysign(fDz,vz) - p[2])/vz);
+  const G4double tz = (vz == 0) ? txy : (G4double)((std::copysign(fDz,vz) - stop_grad(p[2]))/vz);
   const G4double tmax = std::min(txy,tz);
   //
   return tmax;
@@ -92,10 +97,10 @@ G4double Box::DistanceToOut(G4double* p, G4double *v) const {
 
 G4double Box::DistanceToOut(G4double* p) const {
   G4double dist = std::min( std::min(
-                   fDx-std::abs(p[0]),
-                   fDy-std::abs(p[1]) ),
-                   fDz-std::abs(p[2]) );
-  return (dist > 0) ? dist : 0.0;
+                   fDx-std::abs(stop_grad(p[0])),
+                   fDy-std::abs(stop_grad(p[1]))),
+                   fDz-std::abs(stop_grad(p[2])));
+  return (dist > 0) ? dist : dist - stop_grad(dist);
 }
 
 
