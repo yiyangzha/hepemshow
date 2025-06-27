@@ -13,8 +13,8 @@ void WriteResults(struct Results& res, int numEvents, int seed) {
   // for the histograms, bring them to be mean per event and write
   const G4double norm = numEvents > 0 ? 1.0/numEvents : 1.0;
   res.fEdepPerLayer.Scale(norm);
-  res.fGammaTrackLenghtPerLayer.Scale(norm);
-  res.fElPosTrackLenghtPerLayer.Scale(norm);
+  res.fGammaTrackLengthPerLayer.Scale(norm);
+  res.fElPosTrackLengthPerLayer.Scale(norm);
 
   res.fEdepPerLayer.WriteToFile(false);
   std::ofstream edeps("edeps_" + std::to_string(seed));
@@ -38,8 +38,8 @@ void WriteResults(struct Results& res, int numEvents, int seed) {
   #endif
 
 
-  res.fGammaTrackLenghtPerLayer.WriteToFile(false);
-  res.fElPosTrackLenghtPerLayer.WriteToFile(false);
+  res.fGammaTrackLengthPerLayer.WriteToFile(false);
+  res.fElPosTrackLengthPerLayer.WriteToFile(false);
 
   //
   res.fEdepAbs  = res.fEdepAbs*norm;
