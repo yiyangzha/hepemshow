@@ -137,8 +137,8 @@ int main(int argc, char* argv[]) {
        }
     }
   #endif
-  theResult.fGammaTrackLenghtPerLayer.ReSet("hist_GamTrackL_PerLayer", 0, theGeometry.GetNumLayers(), theGeometry.GetNumLayers());
-  theResult.fElPosTrackLenghtPerLayer.ReSet("hist_ElPosTrackL_PerLayer", 0, theGeometry.GetNumLayers(), theGeometry.GetNumLayers());
+  theResult.fGammaTrackLengthPerLayer.ReSet("hist_GamTrackL_PerLayer", 0, theGeometry.GetNumLayers(), theGeometry.GetNumLayers());
+  theResult.fElPosTrackLengthPerLayer.ReSet("hist_ElPosTrackL_PerLayer", 0, theGeometry.GetNumLayers(), theGeometry.GetNumLayers());
 
 
   // here we start the event processing: generate the required number of event and simulte each event.

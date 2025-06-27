@@ -334,10 +334,10 @@ void SteppingLoop::SteppingAction(Results& theResult, const G4HepEmTrack& theTra
   //
   if (currentPhysStepLength <= 0.0) return;
   if (theTrack.GetCharge() == 0.0) {
-    theResult.fGammaTrackLenghtPerLayer.Fill(indxLayer, currentPhysStepLength);
+    theResult.fGammaTrackLengthPerLayer.Fill(indxLayer, currentPhysStepLength);
     theResult.fPerEventRes.fNumStepsGamma += 1.0;
   } else {
-    theResult.fElPosTrackLenghtPerLayer.Fill(indxLayer, currentPhysStepLength);
+    theResult.fElPosTrackLengthPerLayer.Fill(indxLayer, currentPhysStepLength);
     theResult.fPerEventRes.fNumStepsElPos += 1.0;
   }
 }

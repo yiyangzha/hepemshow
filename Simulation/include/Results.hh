@@ -78,8 +78,8 @@ struct Results {
     Accumulator<double> barThicknessAbsorber, barThicknessGap, barParticleEnergy; ///< Accumulate the bar values of the thicknesses and energy.
     G4double pThicknessAbsorber, pThicknessGap, pParticleEnergy; ///< Copies of the thickness and energy variables used by the simulation, used as AD inputs.
   #endif
-  Hist fGammaTrackLenghtPerLayer;  ///< mean number of \f$\gamma\f$ steps per-layer histogram
-  Hist fElPosTrackLenghtPerLayer;  ///< mean number of \f$e^-/e^+\f$ steps per-layer histogram
+  Hist fGammaTrackLengthPerLayer;  ///< mean number of \f$\gamma\f$ steps per-layer histogram
+  Hist fElPosTrackLengthPerLayer;  ///< mean number of \f$e^-/e^+\f$ steps per-layer histogram
   //
   G4double fEdepAbs        { 0.0 };  ///< mean energy deposit in the `absorber`
   G4double fEdepAbs2       { 0.0 };  ///< mean of the squared energy deposit in the `absorber`
