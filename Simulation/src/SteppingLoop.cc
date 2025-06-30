@@ -117,11 +117,11 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
     //       just apply a small push to the current direction and relocate.
     if (stepLength==0.0) {
       stepLength = 1.0E-6;
-      AddTo3Vect(globalPosition_no_grad, curDirection_no_grad, stepLength);
+      AddTo3Vect(globalPosition_no_grad, curDirection_no_grad, stepLength); //
       continue;
     }
     // move the track to the corresponding post-step point
-    AddTo3Vect(globalPosition_no_grad, curDirection_no_grad, stepLength);
+    AddTo3Vect(globalPosition, curDirection, stepLength); //
     // update the geometrical step length (taking the selected)
     theTrack->SetGStepLength(stepLength);
     // update the `onBoundary` falg
@@ -280,11 +280,11 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     if (stepLength==0.0) {
 //      wasPushed  = true;
       stepLength = 1.0E-6;
-      AddTo3Vect(globalPosition_no_grad, curDirection_no_grad, stepLength);
+      AddTo3Vect(globalPosition_no_grad, curDirection_no_grad, stepLength);  //
       continue;
     }
     // move the track to the corresponding post-step point
-    AddTo3Vect(globalPosition_no_grad, curDirection_no_grad, stepLength);
+    AddTo3Vect(globalPosition, curDirection, stepLength);  //
     // update the geometrical step length (taking the selected)
     theTrack->SetGStepLength(stepLength);
     // update the `onBoundary` falg
@@ -303,7 +303,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     //  - in case of physics limited step: discrete interaction, producing seondary particle(s), happens additionaly
     // keep the original direction as it will be changed during the physics (even without discrete interaction due to MSC)
     G4double orgDirection[3];
-    Set3Vect(orgDirection, curDirection_no_grad);
+    Set3Vect(orgDirection, curDirection);
     G4HepEmElectronManager::Perform(theState.fData, theState.fParameters, &theTLData);
     // take the real, i.e. physical step length (only if MSC is active in G4HepEmElectronManager because the
     // physical step length stays zero when MSC is not active as physical = geometrical in that case)
@@ -349,17 +349,23 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
         const G4double dispR = std::sqrt(dLength2);
         // update local position by moving to the local longitudinal (i.e. along the original direction) post step-point
         // just to be able to compute the safety at that point
-        AddTo3Vect(localPosition_no_grad, orgDirection, stepLength);
+        AddTo3Vect(localPosition, orgDirection, stepLength); //
+
+        G4double localPosition_no_grad_2[3];
+        localPosition_no_grad_2[0] = stop_grad(localPosition[0]);
+        localPosition_no_grad_2[1] = stop_grad(localPosition[1]);
+        localPosition_no_grad_2[2] = stop_grad(localPosition[2]);
+
         // compute the current post-step point safety and reduce a bit
-        const G4double postSafety = 0.99*currentVolume->DistanceToOut(localPosition_no_grad);
+        const G4double postSafety = 0.99*currentVolume->DistanceToOut(localPosition_no_grad_2);
         if (postSafety > 0.0 && dispR < postSafety) {
           // far away from boundary: can be applied safely i.e. we won't get to boundary
-          AddTo3Vect(globalPosition_no_grad, displacement);
+          AddTo3Vect(globalPosition, displacement);   //
           //near the boundary
         } else {
           // displaced point is definitely within the volume
           if (dispR < postSafety) {
-            AddTo3Vect(globalPosition_no_grad, displacement);
+            AddTo3Vect(globalPosition, displacement);  //
           } else if(postSafety > kGeomMinLength) {
             // reduced displacement
             const G4double scale = (postSafety/dispR);
