@@ -369,7 +369,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
           } else if(postSafety > kGeomMinLength) {
             // reduced displacement
             const G4double scale = (postSafety/dispR);
-            AddTo3Vect(globalPosition_no_grad, displacement, scale);
+            AddTo3Vect(globalPosition, displacement, scale);
           } // else {
             // very small postSafety
             // isPositionChanged = false;
