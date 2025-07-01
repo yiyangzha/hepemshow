@@ -20,14 +20,6 @@
 #include "Box.hh"
 #include "Results.hh"
 
-template<typename Expr>
-inline G4double stop_grad(const Expr& x) {
-  //return G4double(x);
-  return G4double(GET_VALUE(x));
-}
-
-
-
 //
 // NOTE: we always calculate the distance to boundary and the pre-step point safety
 //       that is very far from being optimal. In real g4 tracking, the safety is
@@ -192,7 +184,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     // along the original direction and see if the post-step point is on-boundary
     //G4double stepLength = distToBoundary;
     //G4double stepLength = stop_grad(distToBoundary) + (distToPhysics - stop_grad(distToPhysics)); //fix1
-    G4double stepLength = stop_grad(distToBoundary) ; //fix2
+    G4double stepLength = distToBoundary ; //fix2
 
     onBoundary        = true;
     if (distToPhysics < distToBoundary) {
