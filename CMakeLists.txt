@@ -6,13 +6,6 @@ if(${CMAKE_VERSION} VERSION_LESS 3.12)
 endif()
 project(hepemshow)
 
-if(NOT CMAKE_BUILD_TYPE)
-  set(CMAKE_BUILD_TYPE Debug CACHE STRING "Build type (default Debug)" FORCE)
-endif()
-
-set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -g -O0")
-set(CMAKE_C_FLAGS_DEBUG   "${CMAKE_C_FLAGS_DEBUG}   -g -O0")
-
 # Have linker set RPATH, not RUNPATH
 SET(CMAKE_EXE_LINKER_FLAGS "-Wl,--disable-new-dtags")
 

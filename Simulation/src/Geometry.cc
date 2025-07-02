@@ -111,10 +111,8 @@ G4double Geometry::CalculateDistanceToOut(G4double* r, G4double *v, Box** curren
   *indxLayer = iLayer;
   // - then the corresponding translation vector and transform the point
   const G4double trLayeri = -0.5*fCaloThick + (iLayer+0.5)*fLayerThick;
-  const G4double rx_Layer = rx_Calo - trLayeri;
-  r[0] =  stop_grad(rx_Layer);
-  r[1] =  stop_grad(r[1]);
-  r[2] =  stop_grad(r[2]);
+  const G4double rx_Layer = rx_Calo - stop_grad(trLayeri);
+  r[0] =  rx_Layer;
 
   // calculate the distance to the `layer` boundary along the given direction
   // why: tolerance and direction was not considered! So to detect here that

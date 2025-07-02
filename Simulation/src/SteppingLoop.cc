@@ -49,6 +49,7 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
   int  indxLayer     = -1;
   int  indxAbs       = -1;
   G4double  localPosition[3];
+  G4double localPosition_no_grad[3], curDirection_no_grad[3], globalPosition_no_grad[3];
   while (theTrack->GetEKin() > 0.0) {
     // calculate distance to boundary from the pre-step point: will locate the pont
     // NOTE: this should never be zero as zero means that the point is outside of the volume
@@ -60,26 +61,23 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
     // set the local position = global position (will be local after CalculateDistanceToOut)
     Set3Vect(localPosition, globalPosition);
 
-    G4double localPosition_no_grad[3] = {0.0, 0.0, 0.0};
     localPosition_no_grad[0] = stop_grad(localPosition[0]);
     localPosition_no_grad[1] = stop_grad(localPosition[1]);
     localPosition_no_grad[2] = stop_grad(localPosition[2]);
-    G4double curDirection_no_grad[3] = {0.0, 0.0, 0.0};
     curDirection_no_grad[0] = stop_grad(curDirection[0]);
     curDirection_no_grad[1] = stop_grad(curDirection[1]);
     curDirection_no_grad[2] = stop_grad(curDirection[2]);
-    G4double globalPosition_no_grad[3] = {0.0, 0.0, 0.0};
     globalPosition_no_grad[0] = stop_grad(globalPosition[0]);
     globalPosition_no_grad[1] = stop_grad(globalPosition[1]);
     globalPosition_no_grad[2] = stop_grad(globalPosition[2]);
 
-    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection_no_grad, &currentVolume, &indxLayer, &indxAbs);
+    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition_no_grad, curDirection_no_grad, &currentVolume, &indxLayer, &indxAbs);
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
       return;
     }
     // calculate pre-step point safety
-    const G4double preStepSafety  = currentVolume->DistanceToOut(localPosition);
+    const G4double preStepSafety  = currentVolume->DistanceToOut(localPosition_no_grad);
     bool onBoundary = (preStepSafety == 0.0);
     // get the material-cuts couple index from the volume
     const int indxMaterial = currentVolume->GetMaterialIndx();
@@ -152,6 +150,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
   int  indxLayer     = -1;
   int  indxAbs       = -1;
   G4double  localPosition[3];
+  G4double localPosition_no_grad[3], curDirection_no_grad[3], globalPosition_no_grad[3];
   bool wasOnBoundary = false;
 //  bool wasPushed     = false;
 
@@ -167,20 +166,17 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     // set the local position = global position (will be local after CalculateDistanceToOut)
     Set3Vect(localPosition, globalPosition);
 
-    G4double localPosition_no_grad[3] = {0.0, 0.0, 0.0};
     localPosition_no_grad[0] = stop_grad(localPosition[0]);
     localPosition_no_grad[1] = stop_grad(localPosition[1]);
     localPosition_no_grad[2] = stop_grad(localPosition[2]);
-    G4double curDirection_no_grad[3] = {0.0, 0.0, 0.0};
     curDirection_no_grad[0] = stop_grad(curDirection[0]);
     curDirection_no_grad[1] = stop_grad(curDirection[1]);
     curDirection_no_grad[2] = stop_grad(curDirection[2]);
-    G4double globalPosition_no_grad[3] = {0.0, 0.0, 0.0};
     globalPosition_no_grad[0] = stop_grad(globalPosition[0]);
     globalPosition_no_grad[1] = stop_grad(globalPosition[1]);
     globalPosition_no_grad[2] = stop_grad(globalPosition[2]);
 
-    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection_no_grad, &currentVolume, &indxLayer, &indxAbs);
+    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition_no_grad, curDirection_no_grad, &currentVolume, &indxLayer, &indxAbs);
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
       return;
