@@ -20,6 +20,12 @@
 #include "Box.hh"
 #include "Results.hh"
 
+template<typename Expr>
+inline G4double stop_grad(const Expr& x) {
+  //return G4double(x);
+  return G4double(GET_VALUE(x));
+}
+
 //
 // NOTE: we always calculate the distance to boundary and the pre-step point safety
 //       that is very far from being optimal. In real g4 tracking, the safety is
@@ -44,6 +50,7 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
   int  indxLayer     = -1;
   int  indxAbs       = -1;
   G4double  localPosition[3];
+  G4double localPosition_no_grad[3], curDirection_no_grad[3], globalPosition_no_grad[3];
   while (theTrack->GetEKin() > 0.0) {
     // calculate distance to boundary from the pre-step point: will locate the pont
     // NOTE: this should never be zero as zero means that the point is outside of the volume
@@ -53,13 +60,24 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
     G4double* curDirection   = theTrack->GetDirection();
     // set the local position = global position (will be local after CalculateDistanceToOut)
     Set3Vect(localPosition, globalPosition);
-    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
+
+    localPosition_no_grad[0] = stop_grad(localPosition[0]);
+    localPosition_no_grad[1] = stop_grad(localPosition[1]);
+    localPosition_no_grad[2] = stop_grad(localPosition[2]);
+    curDirection_no_grad[0] = stop_grad(curDirection[0]);
+    curDirection_no_grad[1] = stop_grad(curDirection[1]);
+    curDirection_no_grad[2] = stop_grad(curDirection[2]);
+    globalPosition_no_grad[0] = stop_grad(globalPosition[0]);
+    globalPosition_no_grad[1] = stop_grad(globalPosition[1]);
+    globalPosition_no_grad[2] = stop_grad(globalPosition[2]);
+
+    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection_no_grad, &currentVolume, &indxLayer, &indxAbs);
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
       return;
     }
     // calculate pre-step point safety
-    const G4double preStepSafety  = currentVolume->DistanceToOut(localPosition);
+    const G4double preStepSafety  = currentVolume->DistanceToOut(localPosition_no_grad);
     bool onBoundary = (preStepSafety == 0.0);
     // get the material-cuts couple index from the volume
     const int indxMaterial = currentVolume->GetMaterialIndx();
@@ -132,6 +150,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
   int  indxLayer     = -1;
   int  indxAbs       = -1;
   G4double  localPosition[3];
+  G4double localPosition_no_grad[3], curDirection_no_grad[3], globalPosition_no_grad[3];
   bool wasOnBoundary = false;
 //  bool wasPushed     = false;
 
@@ -146,14 +165,25 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     G4double* curDirection   = theTrack->GetDirection();
     // set the local position = global position (will be local after CalculateDistanceToOut)
     Set3Vect(localPosition, globalPosition);
-    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
+
+    localPosition_no_grad[0] = stop_grad(localPosition[0]);
+    localPosition_no_grad[1] = stop_grad(localPosition[1]);
+    localPosition_no_grad[2] = stop_grad(localPosition[2]);
+    curDirection_no_grad[0] = stop_grad(curDirection[0]);
+    curDirection_no_grad[1] = stop_grad(curDirection[1]);
+    curDirection_no_grad[2] = stop_grad(curDirection[2]);
+    globalPosition_no_grad[0] = stop_grad(globalPosition[0]);
+    globalPosition_no_grad[1] = stop_grad(globalPosition[1]);
+    globalPosition_no_grad[2] = stop_grad(globalPosition[2]);
+
+    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection_no_grad, &currentVolume, &indxLayer, &indxAbs);
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
       return;
     }
     // at the pre-step point: calculate safety and check if on-boundary (use only if we do not know that the
     // previous step ended up on boundary i.e. use only in the very first or pushed steps)
-    G4double safety   = currentVolume->DistanceToOut(localPosition);
+    G4double safety   = currentVolume->DistanceToOut(localPosition_no_grad);
     bool onBoundary = numStep == 0 ? (safety<5.0E-10) : wasOnBoundary;
     const G4double preStepSafety = onBoundary ? 0.0 : safety;
 
@@ -232,6 +262,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
 
     // get the displacement and check if we need to apply (should not if the energy is zero but ok keep its simply)
     // we apply it if its length is lonegr than a minimum and we are not on boudnry (i.e. the current post-step point)
+    /*
     if (!onBoundary) {
       const G4double* displacement    = theMSCData->GetDisplacement();
       const G4double  dLength2        = displacement[0]*displacement[0] + displacement[1]*displacement[1] + displacement[2]*displacement[2];
@@ -245,7 +276,12 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
         // just to be able to compute the safety at that point
         AddTo3Vect(localPosition, orgDirection, stepLength);
         // compute the current post-step point safety and reduce a bit
-        const G4double postSafety = 0.99*currentVolume->DistanceToOut(localPosition);
+
+        localPosition_no_grad[0] = stop_grad(localPosition[0]);
+        localPosition_no_grad[1] = stop_grad(localPosition[1]);
+        localPosition_no_grad[2] = stop_grad(localPosition[2]);
+        
+        const G4double postSafety = 0.99*currentVolume->DistanceToOut(localPosition_no_grad);
         if (postSafety > 0.0 && dispR < postSafety) {
           // far away from boundary: can be applied safely i.e. we won't get to boundary
           AddTo3Vect(globalPosition, displacement);
@@ -265,6 +301,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
         }
       }
     }
+    */
     //
     // stack all secondaries (if any) that has been produced in this step
     if (theTLData.GetNumSecondaryElectronTrack() + theTLData.GetNumSecondaryGammaTrack() > 0 ) {

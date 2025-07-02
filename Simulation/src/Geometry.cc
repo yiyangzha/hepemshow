@@ -7,6 +7,12 @@
 
 #include <iostream>
 
+template<typename Expr>
+inline G4double stop_grad(const Expr& x) {
+  //return G4double(x);
+  return G4double(GET_VALUE(x));
+}
+
 Geometry::Geometry() {
   // default values: 50 layers of 2.3 [mm] absorber (PbWO4) and 5.7 [mm] gap (lAr)
   fNumLayers  =  50;
@@ -107,7 +113,9 @@ G4double Geometry::CalculateDistanceToOut(G4double* r, G4double *v, Box** curren
   // - then the corresponding translation vector and transform the point
   const G4double trLayeri = -0.5*fCaloThick + (iLayer+0.5)*fLayerThick;
   const G4double rx_Layer = rx_Calo - trLayeri;
-  r[0] =  rx_Layer;
+  r[0] = rx_Layer;
+  r[1] = stop_grad(r[1]);
+  r[2] = stop_grad(r[2]);
 
   // calculate the distance to the `layer` boundary along the given direction
   // why: tolerance and direction was not considered! So to detect here that
