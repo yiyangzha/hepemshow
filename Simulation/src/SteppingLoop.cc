@@ -61,23 +61,13 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
     // set the local position = global position (will be local after CalculateDistanceToOut)
     Set3Vect(localPosition, globalPosition);
 
-    localPosition_no_grad[0] = stop_grad(localPosition[0]);
-    localPosition_no_grad[1] = stop_grad(localPosition[1]);
-    localPosition_no_grad[2] = stop_grad(localPosition[2]);
-    curDirection_no_grad[0] = stop_grad(curDirection[0]);
-    curDirection_no_grad[1] = stop_grad(curDirection[1]);
-    curDirection_no_grad[2] = stop_grad(curDirection[2]);
-    globalPosition_no_grad[0] = stop_grad(globalPosition[0]);
-    globalPosition_no_grad[1] = stop_grad(globalPosition[1]);
-    globalPosition_no_grad[2] = stop_grad(globalPosition[2]);
-
-    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection_no_grad, &currentVolume, &indxLayer, &indxAbs);
+    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
       return;
     }
     // calculate pre-step point safety
-    const G4double preStepSafety  = currentVolume->DistanceToOut(localPosition_no_grad);
+    const G4double preStepSafety  = currentVolume->DistanceToOut(localPosition);
     bool onBoundary = (preStepSafety == 0.0);
     // get the material-cuts couple index from the volume
     const int indxMaterial = currentVolume->GetMaterialIndx();
@@ -176,7 +166,8 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     globalPosition_no_grad[1] = stop_grad(globalPosition[1]);
     globalPosition_no_grad[2] = stop_grad(globalPosition[2]);
 
-    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection_no_grad, &currentVolume, &indxLayer, &indxAbs);
+    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
+    const G4double distToBoundary_no_dot = theGeometry.CalculateDistanceToOut(localPosition_no_grad, curDirection_no_grad, &currentVolume, &indxLayer, &indxAbs); //FIX
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
       return;
@@ -255,6 +246,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     // keep the original direction as it will be changed during the physics (even without discrete interaction due to MSC)
     G4double orgDirection[3];
     Set3Vect(orgDirection, curDirection);
+    theTLData.GetPrimaryElectronTrack()->GetMSCTrackData()->gStepLength_no_dot = distToBoundary_no_dot; //FIX
     G4HepEmElectronManager::Perform(theState.fData, theState.fParameters, &theTLData);
     // take the real, i.e. physical step length (only if MSC is active in G4HepEmElectronManager because the
     // physical step length stays zero when MSC is not active as physical = geometrical in that case)
