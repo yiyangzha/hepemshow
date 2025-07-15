@@ -50,7 +50,6 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
   int  indxLayer     = -1;
   int  indxAbs       = -1;
   G4double  localPosition[3];
-  G4double localPosition_no_grad[3], curDirection_no_grad[3], globalPosition_no_grad[3];
   while (theTrack->GetEKin() > 0.0) {
     // calculate distance to boundary from the pre-step point: will locate the pont
     // NOTE: this should never be zero as zero means that the point is outside of the volume
@@ -60,7 +59,6 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
     G4double* curDirection   = theTrack->GetDirection();
     // set the local position = global position (will be local after CalculateDistanceToOut)
     Set3Vect(localPosition, globalPosition);
-
     const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
