@@ -166,15 +166,17 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
 
     const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
     const G4double distToBoundary_no_dot = theGeometry.CalculateDistanceToOut(localPosition_no_grad, curDirection_no_grad, &currentVolume, &indxLayer, &indxAbs); //FIX
+    theTLData.GetPrimaryElectronTrack()->GetMSCTrackData()->gStepLength_no_dot = distToBoundary_no_dot; //FIX
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
       return;
     }
     // at the pre-step point: calculate safety and check if on-boundary (use only if we do not know that the
     // previous step ended up on boundary i.e. use only in the very first or pushed steps)
-    G4double safety   = currentVolume->DistanceToOut(localPosition_no_grad);
+    G4double safety   = currentVolume->DistanceToOut(localPosition);
     bool onBoundary = numStep == 0 ? (safety<5.0E-10) : wasOnBoundary;
     const G4double preStepSafety = onBoundary ? 0.0 : safety;
+    theTLData.GetPrimaryElectronTrack()->GetMSCTrackData()->presafety_no_dot = onBoundary ? 0.0 : currentVolume->DistanceToOut(localPosition_no_grad); //FIX
 
     // get the material-cuts couple index from the volume
     const int indxMaterial = currentVolume->GetMaterialIndx();
@@ -210,6 +212,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
       stepLength = distToPhysics;
       onBoundary = false;
     }
+    if (onBoundary) theTLData.GetPrimaryElectronTrack()->GetMSCTrackData()->fTrueStepLength_no_dot_set = false;  //FIX
     // Apply a small push if the step length is zero.
     // NOTE: it can happen that we are actually (logically) out of the volume
     //       where we located to be (due to this simplified "navigaton"). So
@@ -244,7 +247,6 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     // keep the original direction as it will be changed during the physics (even without discrete interaction due to MSC)
     G4double orgDirection[3];
     Set3Vect(orgDirection, curDirection);
-    theTLData.GetPrimaryElectronTrack()->GetMSCTrackData()->gStepLength_no_dot = distToBoundary_no_dot; //FIX
     G4HepEmElectronManager::Perform(theState.fData, theState.fParameters, &theTLData);
     // take the real, i.e. physical step length (only if MSC is active in G4HepEmElectronManager because the
     // physical step length stays zero when MSC is not active as physical = geometrical in that case)
@@ -252,7 +254,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
 
     // get the displacement and check if we need to apply (should not if the energy is zero but ok keep its simply)
     // we apply it if its length is lonegr than a minimum and we are not on boudnry (i.e. the current post-step point)
-    if (!onBoundary) {
+    if (!onBoundary && false) {
       const G4double* displacement    = theMSCData->GetDisplacement();
       const G4double  dLength2        = displacement[0]*displacement[0] + displacement[1]*displacement[1] + displacement[2]*displacement[2];
       const G4double  kGeomMinLength  = 5.0e-8;  // 0.05 [nm]
