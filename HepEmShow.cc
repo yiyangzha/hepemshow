@@ -115,7 +115,7 @@ int main(int argc, char* argv[]) {
   thePrimaryGenerator.SetCharge(charge);
   thePrimaryGenerator.SetKinEnergy(theInputParameters.fPrimaryAndEvents.fParticleEnergy);
   // set primary particle position and direction (should not be changed)
-  thePrimaryGenerator.SetPosition(theGeometry.GetPrimaryXposition(), 0.0, 0.0);
+  thePrimaryGenerator.SetPosition(-1, 0.0, 0.0);
   thePrimaryGenerator.SetDirection(1.0, 0.0, 0.0);
 
 

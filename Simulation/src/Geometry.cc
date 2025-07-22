@@ -12,6 +12,7 @@ inline G4double stop_grad(const Expr& x) {
   //return G4double(x);
   return G4double(GET_VALUE(x));
 }
+G4double fCaloOffsetX;
 
 Geometry::Geometry() {
   // default values: 50 layers of 2.3 [mm] absorber (PbWO4) and 5.7 [mm] gap (lAr)
@@ -54,11 +55,14 @@ void Geometry::UpdateParameters() {
   fCaloThick  = fNumLayers*fLayerThick;
 
   // set/calculate the left hand side x point where the calorimeter starts
-  fCaloStartX = -0.5*fCaloThick;
+  //fCaloStartX = -0.5*fCaloThick;
+  fCaloOffsetX = 0.5 * fCaloThick;  //FIX
+  fCaloStartX = 0.0;  //FIX
   // set/calculate a world size such that everything fits inside
   const G4double worldThick = 1.1*fCaloThick;
   // set/calculate the mid-point between the world and calorimeter on the left
-  fPrimaryXPosition = -0.25*(worldThick + fCaloThick);
+  //fPrimaryXPosition = -0.25*(worldThick + fCaloThick);
+  fPrimaryXPosition = GET_VALUE(-0.25*(worldThick + fCaloThick) + fCaloOffsetX);  //FIX
 
   // half size of all (but the world) along the YZ plane
   const G4double halfCaloYZ = 0.5*fCaloSizeYZ;
@@ -99,6 +103,7 @@ G4double Geometry::CalculateDistanceToOut(G4double* r, G4double *v, Box** curren
   // - only x-coordinate is need as everything is centered along the yz
   // - actually its the same as the global: the calorimeter is not translated nor rotated
   const G4double rx_Calo = r[0];
+  r[0] = r[0] - 0.5 * fCaloThick; //FIX
   const G4double dToCalo = fBoxCalo->DistanceToOut(r, v);
   // check if about leaving the calorimeter volume: distance to out is zero
   if (dToCalo == 0.0) {
@@ -108,12 +113,12 @@ G4double Geometry::CalculateDistanceToOut(G4double* r, G4double *v, Box** curren
 
   // calculate the position in the `layer` system:
   // - first calculate the index of the `layer` in which the point is located
-  const int iLayer = int( GET_VALUE(((rx_Calo+0.5*fCaloThick)/fLayerThick)) );
+  const int iLayer = int( GET_VALUE(((rx_Calo)/fLayerThick)) );  //FIX +0.5*fCaloThick
   *indxLayer = iLayer;
   // - then the corresponding translation vector and transform the point
-  const G4double trLayeri = -0.5*fCaloThick + (iLayer+0.5)*fLayerThick;
+  const G4double trLayeri = (iLayer)*fLayerThick; //FIX -0.5*fCaloThick +  +0.5
   const G4double rx_Layer = rx_Calo - trLayeri;
-  r[0] = rx_Layer;
+  r[0] = rx_Layer - 0.5*fLayerThick; //FIX
 
   // calculate the distance to the `layer` boundary along the given direction
   // why: tolerance and direction was not considered! So to detect here that
@@ -124,10 +129,10 @@ G4double Geometry::CalculateDistanceToOut(G4double* r, G4double *v, Box** curren
   }
 
   // calculate if the point is in the `absorber` or the `gap` part of the `layer`
-  if (rx_Layer + 0.5*fLayerThick < fAbsThick || fGapThick == 0) { // in the `absorber`
+  if (rx_Layer < fAbsThick || fGapThick == 0) { // in the `absorber`
     // calculate the position in the `absorber` system:
     // - the translation vector and transform the point
-    const G4double trAbs = -0.5*(fLayerThick - fAbsThick);
+    const G4double trAbs = 0.5 * fAbsThick;  //FIX -0.5*(fLayerThick - fAbsThick)
     r[0] = rx_Layer - trAbs;
     // set what is left and calculate the distance to the `absorber` boundary along
     // the given direction (again, I could push here and do recursion whenever it's zero)
@@ -137,7 +142,7 @@ G4double Geometry::CalculateDistanceToOut(G4double* r, G4double *v, Box** curren
   } else { // in the `gap`
     // calculate the position in the `gap` system:
     // - the translation vector and transform the point
-    const G4double  trGap = -0.5*(fLayerThick -fGapThick) + fAbsThick;
+    const G4double  trGap = fAbsThick + 0.5 * fGapThick; //FIX -0.5*(fLayerThick -fGapThick) + 
     r[0] = rx_Layer - trGap;
     // set what is left and calculate the distance to the `gap` boundary along
     // the given direction (again, I could push here and do recursion whenever it's zero)
