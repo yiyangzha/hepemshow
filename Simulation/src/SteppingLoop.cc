@@ -145,6 +145,11 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
   // keep tracking while the kinetic energy drops to zero (i.e. e-/e+ lose all its energy; e+ annihilates)
   // unless the track is going out of the Calorimeter
   while (theTrack->GetEKin() > 0.0) {
+    if (theTrack->GetDirection()[0] < 1e-1) //FIX
+    {
+      theTrack->SetDirection(stop_grad(theTrack->GetDirection()[0]), stop_grad(theTrack->GetDirection()[1]), stop_grad(theTrack->GetDirection()[2])); //FIX
+      theTrack->SetPosition(stop_grad(theTrack->GetPosition()[0]), stop_grad(theTrack->GetPosition()[1]), stop_grad(theTrack->GetPosition()[2])); //FIX
+    }
     // calculate distance to boundary from the pre-step point: will locate the pont
     // NOTE: this should never be zero as zero means that the point is outside of the volume
     //       (taking into account the direction and tolerance)
@@ -166,7 +171,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
 
     const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
     const G4double distToBoundary_no_dot = theGeometry.CalculateDistanceToOut(localPosition_no_grad, curDirection_no_grad, &currentVolume, &indxLayer, &indxAbs); //FIX
-    theTLData.GetPrimaryElectronTrack()->GetMSCTrackData()->gStepLength_no_dot = distToBoundary_no_dot; //FIX
+    theTLData.GetPrimaryElectronTrack()->GetMSCTrackData()->gStepLength_no_dot = distToBoundary; //FIX
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
       return;
