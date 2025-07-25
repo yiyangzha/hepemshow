@@ -259,7 +259,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
 
     // get the displacement and check if we need to apply (should not if the energy is zero but ok keep its simply)
     // we apply it if its length is lonegr than a minimum and we are not on boudnry (i.e. the current post-step point)
-    if (!onBoundary && false) {
+    if (!onBoundary) {
       const G4double* displacement    = theMSCData->GetDisplacement();
       const G4double  dLength2        = displacement[0]*displacement[0] + displacement[1]*displacement[1] + displacement[2]*displacement[2];
       const G4double  kGeomMinLength  = 5.0e-8;  // 0.05 [nm]
@@ -277,7 +277,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
         localPosition_no_grad[1] = stop_grad(localPosition[1]);
         localPosition_no_grad[2] = stop_grad(localPosition[2]);
         
-        const G4double postSafety = 0.99*currentVolume->DistanceToOut(localPosition_no_grad);
+        const G4double postSafety = 0.99*currentVolume->DistanceToOut(localPosition);
         if (postSafety > 0.0 && dispR < postSafety) {
           // far away from boundary: can be applied safely i.e. we won't get to boundary
           AddTo3Vect(globalPosition, displacement);
