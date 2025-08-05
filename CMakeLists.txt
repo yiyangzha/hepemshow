@@ -36,26 +36,34 @@ endif()
 # For the Simulation application:
 set(headers_SIM
   ${CMAKE_SOURCE_DIR}/Simulation/include/Box.hh
+  ${CMAKE_SOURCE_DIR}/Simulation/include/Sphere.hh
   ${CMAKE_SOURCE_DIR}/Simulation/include/EventLoop.hh
+  ${CMAKE_SOURCE_DIR}/Simulation/include/EventLoopSphere.hh
   ${CMAKE_SOURCE_DIR}/Simulation/include/Geometry.hh
+  ${CMAKE_SOURCE_DIR}/Simulation/include/GeometrySphere.hh
   ${CMAKE_SOURCE_DIR}/Simulation/include/Hist.hh
   ${CMAKE_SOURCE_DIR}/Simulation/include/Physics.hh
   ${CMAKE_SOURCE_DIR}/Simulation/include/PrimaryGenerator.hh
   ${CMAKE_SOURCE_DIR}/Simulation/include/Results.hh
   ${CMAKE_SOURCE_DIR}/Simulation/include/SteppingLoop.hh
+  ${CMAKE_SOURCE_DIR}/Simulation/include/SteppingLoopSphere.hh
   ${CMAKE_SOURCE_DIR}/Simulation/include/TrackStack.hh
   ${CMAKE_SOURCE_DIR}/Simulation/include/URandom.hh
 )
 
 set(sources_SIM
   ${CMAKE_SOURCE_DIR}/Simulation/src/Box.cc
+  ${CMAKE_SOURCE_DIR}/Simulation/src/Sphere.cc
   ${CMAKE_SOURCE_DIR}/Simulation/src/EventLoop.cc
+  ${CMAKE_SOURCE_DIR}/Simulation/src/EventLoopSphere.cc
   ${CMAKE_SOURCE_DIR}/Simulation/src/Geometry.cc
+  ${CMAKE_SOURCE_DIR}/Simulation/src/GeometrySphere.cc
   ${CMAKE_SOURCE_DIR}/Simulation/src/Hist.cc
   ${CMAKE_SOURCE_DIR}/Simulation/src/Physics.cc
   ${CMAKE_SOURCE_DIR}/Simulation/src/PrimaryGenerator.cc
   ${CMAKE_SOURCE_DIR}/Simulation/src/Results.cc
   ${CMAKE_SOURCE_DIR}/Simulation/src/SteppingLoop.cc
+  ${CMAKE_SOURCE_DIR}/Simulation/src/SteppingLoopSphere.cc
   ${CMAKE_SOURCE_DIR}/Simulation/src/TrackStack.cc
   ${CMAKE_SOURCE_DIR}/Simulation/src/URandom.cc
 )

@@ -84,8 +84,17 @@ G4double Box::DistanceToOut(G4double* p, G4double *v) const {
   //
   const G4double vz = v[2];
   const G4double tz = (vz == 0) ? txy : (G4double)((std::copysign(fDz,vz) - p[2])/vz);
-  const G4double tmax = std::min(txy,tz);
+  G4double tmax = std::min(txy,tz);  //FIX const
   //
+
+  //FIX start
+  const bool hitX = (tx <= ty && tx <= tz);
+  const bool hitY = (!hitX && ty <= tx && ty <= tz);
+  if (hitX && std::abs(vx) < 0.1) tmax.setGradient(0);
+  else if (hitY && std::abs(vy) < 0.1) tmax.setGradient(0);
+  else if (!hitX && !hitY && std::abs(vz) < 0.1) tmax.setGradient(0);
+  //FIX end
+
   return tmax;
 }
 

@@ -7,11 +7,6 @@
 
 #include <iostream>
 
-template<typename Expr>
-inline G4double stop_grad(const Expr& x) {
-  //return G4double(x);
-  return G4double(GET_VALUE(x));
-}
 G4double fCaloOffsetX;
 
 Geometry::Geometry() {

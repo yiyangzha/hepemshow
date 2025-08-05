@@ -8,20 +8,20 @@
  * The main of the `HepEmShow` application is responsible for setting up the
  * environment, lunch the simulation and write the results. This is done by:
  * - reading the input arguments provided at the execution of the application
- *   into an `InputParameters` object. (Note, these arguments provide
+ *   into an `InputParametersSphere` object. (Note, these arguments provide
  *   configuration options).
  * - loading the `G4HepEm` data and parameters from file into a `G4HepEmState`
  *   (see the note below)
  * - constructing a `G4HepEmTLData` (also required by `G4HepEm` and encapsulates
  *   the random number generator and some track buffers) with its random number
  *   generator (utilising the local `URandom` generator)
- * - constructing and setting up the application `Geometry` according to the
- *   provided configuration input arguments (in `InputParameters`)
+ * - constructing and setting up the application `GeometrySphere` according to the
+ *   provided configuration input arguments (in `InputParametersSphere`)
  * - constructing and setting up the `PrimaryGenerator` of the application according
- *   to the provided configuration input arguments (in `InputParameters`)
+ *   to the provided configuration input arguments (in `InputParametersSphere`)
  * - constructing and setting up a `Results` structure that will be used to collect
  *   some data during the simulation
- * - the `EventLoop::ProcessEvents` method is invoked then to **perform the simulation**
+ * - the `EventLoopSphere::ProcessEvents` method is invoked then to **perform the simulation**
  * - the simulation results are witten to file (and to the standard output) by
  *   invoking `WriteResults()` (from the `Results`)
  *
@@ -30,7 +30,7 @@
  * `HepEmShow-DataGeneration` application. In the former case, the data file
  * contains all data that `G4HepEm` needs for the simulation for the 3 default
  * (`{"G4_Galactic", "G4_PbWO4", "G4_lAr"}`) materials, i.e. those used in the
- * default `Geometry` configuration.
+ * default `GeometrySphere` configuration.
  */
 
 
@@ -51,11 +51,11 @@
 #include "URandom.hh"
 
 // Local includes:
-#include "InputParameters.hh"
-#include "Geometry.hh"
+#include "InputParametersSphere.hh"
+#include "GeometrySphere.hh"
 #include "PrimaryGenerator.hh"
 #include "Results.hh"
-#include "EventLoop.hh"
+#include "EventLoopSphere.hh"
 
 
 // System includes:
@@ -72,14 +72,14 @@
 /** The main function of the `HepEmShow` simulation application (see more in the description). */
 int main(int argc, char* argv[]) {
 
-  // `InputParameters` encapsulates the possible input parameters that are read by `GetOpt`
-  InputParameters theInputParameters;
-  GetOpt(argc, argv, theInputParameters);
+  // `InputParametersSphere` encapsulates the possible input parameters that are read by `GetOpt`
+  InputParametersSphere theInputParametersSphere;
+  GetOpt(argc, argv, theInputParametersSphere);
 
 
   // `G4HepEmState` encapsulates G4HepEm (physics related) `data` and `parameters`
   // here we load the generated/delivered G4HepEm data from the file given as an input argument
-  std::ifstream jsonIS{ theInputParameters.fG4HepEmDataFile.c_str() };
+  std::ifstream jsonIS{ theInputParametersSphere.fG4HepEmDataFile.c_str() };
   G4HepEmState* theState = G4HepEmStateFromJson(jsonIS);
 
 
@@ -91,31 +91,31 @@ int main(int argc, char* argv[]) {
   // construct a HepEm random number generator, using our local uniform `URandom`
   // generator, then set it to be used in the above TLdata
   // NOTE: seed can be set as input argument
-  URandom*             theURnd         = new URandom(GET_VALUE(theInputParameters.fPrimaryAndEvents.fRandomSeed));
+  URandom*             theURnd         = new URandom(GET_VALUE(theInputParametersSphere.fPrimaryAndEvents.fRandomSeed));
   G4HepEmRandomEngine* theRandomEngine = new G4HepEmRandomEngine(theURnd);
   theTLData->SetRandomEngine(theRandomEngine);
 
 
-  // `Geometry` describes the application geometry (i.e. the simplified sampling calorimeter)
-  //  here we construct the application geometry and set its configurable properties like
+  // `GeometrySphere` describes the application GeometrySphere (i.e. the simplified sampling calorimeter)
+  //  here we construct the application GeometrySphere and set its configurable properties like
   //  #layers, thickness of absorber and gap, etc.
-  Geometry theGeometry;
-  theGeometry.SetNumLayers(theInputParameters.fGeometry.fNumLayers);
-  theGeometry.SetAbsThick(theInputParameters.fGeometry.fThicknessAbsorber);
-  theGeometry.SetGapThick(theInputParameters.fGeometry.fThicknessGap);
-  theGeometry.SetCaloSizeYZ(theInputParameters.fGeometry.fSizeTransverse);
+  GeometrySphere theGeometrySphere;
+  theGeometrySphere.SetNumLayers(theInputParametersSphere.fGeometrySphere.fNumLayers);
+  theGeometrySphere.SetAbsThick(theInputParametersSphere.fGeometrySphere.fThicknessAbsorber);
+  theGeometrySphere.SetGapThick(theInputParametersSphere.fGeometrySphere.fThicknessGap);
+  
 
 
   // `PrimaryGenerator` is used to produce primary particle/track when starting a new event
   // here we construct the primary generator and set its configurable properties like
   // primary particle kinetic energy and its type, i.e. e-,e+ or gamma (determined the charge), etc.
   PrimaryGenerator thePrimaryGenerator;
-  double charge = theInputParameters.fPrimaryAndEvents.fParticleName == "e-" ? -1.0
-                  : (theInputParameters.fPrimaryAndEvents.fParticleName == "gamma" ? 0.0 : +1.0);
+  double charge = theInputParametersSphere.fPrimaryAndEvents.fParticleName == "e-" ? -1.0
+                  : (theInputParametersSphere.fPrimaryAndEvents.fParticleName == "gamma" ? 0.0 : +1.0);
   thePrimaryGenerator.SetCharge(charge);
-  thePrimaryGenerator.SetKinEnergy(theInputParameters.fPrimaryAndEvents.fParticleEnergy);
+  thePrimaryGenerator.SetKinEnergy(theInputParametersSphere.fPrimaryAndEvents.fParticleEnergy);
   // set primary particle position and direction (should not be changed)
-  thePrimaryGenerator.SetPosition(-1, 0.0, 0.0);
+  thePrimaryGenerator.SetPosition(0.0, 0.0, 0.0);
   thePrimaryGenerator.SetDirection(1.0, 0.0, 0.0);
 
 
@@ -123,8 +123,8 @@ int main(int argc, char* argv[]) {
   // here we construct one and set the properties of its histograms (as thery are used
   // to collect data per-layer and the number of layer is configurable input argument)
   Results theResult;
-  theResult.fEdepPerLayer.ReSet("hist_Edep_PerLayer", 0, theGeometry.GetNumLayers(), theGeometry.GetNumLayers());
-  theResult.fEdepPerLayer_CurrentEvent.ReSet("hist_Edep_PerLayer_CurrentEvent", 0, theGeometry.GetNumLayers(), theGeometry.GetNumLayers());
+  theResult.fEdepPerLayer.ReSet("hist_Edep_PerLayer", 0, 50, 50);  //FIX
+  theResult.fEdepPerLayer_CurrentEvent.ReSet("hist_Edep_PerLayer_CurrentEvent", 0, 50, 50);  //FIX
   theResult.fEdepPerLayer_Acc.resize(50);
   #ifdef CODI_FORWARD
     theResult.fEdepPerLayer_AccD.resize(50);
@@ -132,21 +132,21 @@ int main(int argc, char* argv[]) {
   #ifdef CODI_REVERSE
     theResult.barEdep.resize(50,0.);
     for(int i=0; i<50; i++){
-       if(i<theInputParameters.barEdep.size()){
-          theResult.barEdep[i] = theInputParameters.barEdep[i];
+       if(i<theInputParametersSphere.barEdep.size()){
+          theResult.barEdep[i] = theInputParametersSphere.barEdep[i];
        }
     }
   #endif
-  theResult.fGammaTrackLenghtPerLayer.ReSet("hist_GamTrackL_PerLayer", 0, theGeometry.GetNumLayers(), theGeometry.GetNumLayers());
-  theResult.fElPosTrackLenghtPerLayer.ReSet("hist_ElPosTrackL_PerLayer", 0, theGeometry.GetNumLayers(), theGeometry.GetNumLayers());
+  theResult.fGammaTrackLenghtPerLayer.ReSet("hist_GamTrackL_PerLayer", 0, 50, 50);  //FIX
+  theResult.fElPosTrackLenghtPerLayer.ReSet("hist_ElPosTrackL_PerLayer", 0, 50, 50);  //FIX
 
 
   // here we start the event processing: generate the required number of event and simulte each event.
-  EventLoop::ProcessEvents(*theTLData, *theState, thePrimaryGenerator, theGeometry, theResult, theInputParameters.fPrimaryAndEvents.fNumEvents, theInputParameters.fRunVerbosity);
+  EventLoopSphere::ProcessEvents(*theTLData, *theState, thePrimaryGenerator, theGeometrySphere, theResult, theInputParametersSphere.fPrimaryAndEvents.fNumEvents, theInputParametersSphere.fRunVerbosity);
 
 
   // here we summarise the results and write them to file (the histograms) or to the screen
-  WriteResults(theResult, theInputParameters.fPrimaryAndEvents.fNumEvents, GET_VALUE(theInputParameters.fPrimaryAndEvents.fRandomSeed));
+  WriteResults(theResult, theInputParametersSphere.fPrimaryAndEvents.fNumEvents, GET_VALUE(theInputParametersSphere.fPrimaryAndEvents.fRandomSeed));
 
 
   // delete objects

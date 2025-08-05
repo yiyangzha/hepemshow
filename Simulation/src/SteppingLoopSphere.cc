@@ -1,7 +1,7 @@
 #include "ad_type.h"
 
 
-#include "SteppingLoop.hh"
+#include "SteppingLoopSphere.hh"
 
 // G4HepEm includes
 #include "G4HepEmTLData.hh"
@@ -16,8 +16,8 @@
 // application local includes
 #include "TrackStack.hh"
 #include "Physics.hh"
-#include "Geometry.hh"
-#include "Box.hh"
+#include "GeometrySphere.hh"
+#include "Sphere.hh"
 #include "Results.hh"
 
 template<typename Expr>
@@ -25,12 +25,6 @@ inline G4double stop_grad(const Expr& x) {
   //return G4double(x);
   return G4double(GET_VALUE(x));
 }
-
-static std::ofstream debugFile("electron_debug.csv");
-static bool debugFileInitialized = [](){
-  debugFile << "step,charge,trackID,parentID,localX,localX_dot,localY,localY_dot,localZ,localZ_dot,globalX,globalX_dot,globalY,globalY_dot,globalZ,globalZ_dot,distToBoundary,distToBoundary_dot,safety,safety_dot,preStepSafety,preStepSafety_dot,distToPhysics,distToPhysics_dot,stepLength,stepLength_dot,pStepLength,pStepLength_dot,KE,KE_dot,winnerIdx,onBoundary,wasOnBoundary,directionX,directionX_dot,directionY,directionY_dot,directionZ,directionZ_dot\n";
-  return true;
-}();
 
 //
 // NOTE: we always calculate the distance to boundary and the pre-step point safety
@@ -41,7 +35,7 @@ static bool debugFileInitialized = [](){
 //       to boundary as for sure the step will end up far from the boundaries.
 //       But here we have a simplified gometry and navigation....
 
-void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState, TrackStack& theTrackStack, Geometry& theGeometry, Results& theResult, int eventID) {
+void SteppingLoopSphere::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState, TrackStack& theTrackStack, GeometrySphere& theGeometrySphere, Results& theResult, int eventID) {
   // NOTE: the start tracking procedure (reset the track and the rng) was done
   G4HepEmTrack* theTrack = theTLData.GetPrimaryGammaTrack()->GetTrack();
 
@@ -51,7 +45,7 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
   // anyway: locate in all cases to keep it simply (but slower anyway)
   //
   int  numStep       = 0;
-  Box* currentVolume = nullptr;
+  Sphere* currentVolume = nullptr;
   bool onBoundary    = false;
   int  indxLayer     = -1;
   int  indxAbs       = -1;
@@ -65,7 +59,7 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
     G4double* curDirection   = theTrack->GetDirection();
     // set the local position = global position (will be local after CalculateDistanceToOut)
     Set3Vect(localPosition, globalPosition);
-    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
+    const G4double distToBoundary = theGeometrySphere.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
       return;
@@ -88,7 +82,7 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
     G4HepEmGammaManager::HowFar(theState.fData, theState.fParameters, &theTLData);
     const G4double distToPhysics = theTrack->GetGStepLength();
     //
-    // take the shortest from the geometry and the physics step limits as the current (straight line) step length
+    // take the shortest from the GeometrySphere and the physics step limits as the current (straight line) step length
     G4double stepLength = distToBoundary;
     onBoundary        = true;
     if (distToPhysics < distToBoundary) {
@@ -129,7 +123,7 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
 }
 
 
-void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theState, TrackStack& theTrackStack, Geometry& theGeometry, Results& theResult, int eventID) {
+void SteppingLoopSphere::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theState, TrackStack& theTrackStack, GeometrySphere& theGeometrySphere, Results& theResult, int eventID) {
   // NOTE: the start tracking procedure (reset the track and the rng) was already done in the EventLoop
   G4HepEmTrack*           theTrack = theTLData.GetPrimaryElectronTrack()->GetTrack();
   G4HepEmMSCTrackData*  theMSCData = theTLData.GetPrimaryElectronTrack()->GetMSCTrackData();
@@ -139,7 +133,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
   // anyway: locate in all cases to keep it simply (but slower anyway)
   //
   int  numStep       = 0;
-  Box* currentVolume = nullptr;
+  Sphere* currentVolume = nullptr;
   bool onBoundary    = false;
   int  indxLayer     = -1;
   int  indxAbs       = -1;
@@ -159,7 +153,17 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     // set the local position = global position (will be local after CalculateDistanceToOut)
     Set3Vect(localPosition, globalPosition);
 
-    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
+    G4double distToBoundary = theGeometrySphere.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
+    if (std::abs(GET_DOTVALUE(distToBoundary) + 999) < 1e-10) //FIX
+    {
+       theTrack->GetPosition()[0] = stop_grad(theTrack->GetPosition()[0]);
+       theTrack->GetPosition()[1] = stop_grad(theTrack->GetPosition()[1]);
+       theTrack->GetPosition()[2] = stop_grad(theTrack->GetPosition()[2]);
+       theTrack->GetDirection()[0] = stop_grad(theTrack->GetDirection()[0]);
+       theTrack->GetDirection()[1] = stop_grad(theTrack->GetDirection()[1]);
+       theTrack->GetDirection()[2] = stop_grad(theTrack->GetDirection()[2]);
+       distToBoundary = stop_grad(distToBoundary);
+    }
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
       return;
@@ -196,7 +200,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     G4HepEmElectronManager::HowFar(theState.fData, theState.fParameters, &theTLData);
     const G4double distToPhysics = theTrack->GetGStepLength();
     //
-    // take the shortest from the geometry and physics step limits as current (straight line) step length
+    // take the shortest from the GeometrySphere and physics step limits as current (straight line) step length
     // along the original direction and see if the post-step point is on-boundary
     G4double stepLength = distToBoundary;
 
@@ -225,7 +229,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
 
     // Then call `Perform` to do evything needs to be done with the track regarding physics
     //  - the continuous interactions will be performed in all cases (i.e. independently
-    //    if geometry or physics limited the step):
+    //    if GeometrySphere or physics limited the step):
     //    = these continuous interactions are:
     //       a. first the geometrical step is converted to physical by accounting the effects of MSC
     //       b. this real physical step length is used to compute the energy loss due to sub-threshold
@@ -285,29 +289,6 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     }
 
     SteppingAction(theResult, *theTrack, currentVolume, pStepLength, indxLayer, indxAbs, eventID, numStep);
-    /*#if CODI_FORWARD //FIX
-    debugFile << numStep << ","
-              << theTrack->GetCharge() << ","
-              << theTrack->GetID() << ","
-              << theTrack->GetParentID() << ","
-              << GET_VALUE(localPosition[0]) << "," << GET_DOTVALUE(localPosition[0]) << ","
-              << GET_VALUE(localPosition[1]) << "," << GET_DOTVALUE(localPosition[1]) << ","
-              << GET_VALUE(localPosition[2]) << "," << GET_DOTVALUE(localPosition[2]) << ","
-              << GET_VALUE(globalPosition[0]) << "," << GET_DOTVALUE(globalPosition[0]) << ","
-              << GET_VALUE(globalPosition[1]) << "," << GET_DOTVALUE(globalPosition[1]) << ","
-              << GET_VALUE(globalPosition[2]) << "," << GET_DOTVALUE(globalPosition[2]) << ","
-              << GET_VALUE(distToBoundary) << "," << GET_DOTVALUE(distToBoundary) << ","
-              << GET_VALUE(safety) << "," << GET_DOTVALUE(safety) << ","
-              << GET_VALUE(preStepSafety) << "," << GET_DOTVALUE(preStepSafety) << ","
-              << GET_VALUE(distToPhysics) << "," << GET_DOTVALUE(distToPhysics) << ","
-              << GET_VALUE(stepLength) << "," << GET_DOTVALUE(stepLength) << ","
-              << GET_VALUE(pStepLength) << "," << GET_DOTVALUE(pStepLength) << ","
-              << GET_VALUE(theTrack->GetEKin()) << "," << GET_DOTVALUE(theTrack->GetEKin()) << ","
-              << theTrack->GetWinnerProcessIndex() << "," << onBoundary << "," << wasOnBoundary <<  ","
-              << GET_VALUE(curDirection[0]) << "," << GET_DOTVALUE(curDirection[0]) << ","
-              << GET_VALUE(curDirection[1]) << "," << GET_DOTVALUE(curDirection[1]) << ","
-              << GET_VALUE(curDirection[2]) << "," << GET_DOTVALUE(curDirection[2]) << "\n" ;
-    #endif*/
     wasOnBoundary = onBoundary;
 
     ++numStep;
@@ -315,7 +296,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
 }
 
 
-void SteppingLoop::StackSecondaries(G4HepEmTLData& theTLData, TrackStack& theTrackStack, G4HepEmTrack& thePrimary) {
+void SteppingLoopSphere::StackSecondaries(G4HepEmTLData& theTLData, TrackStack& theTrackStack, G4HepEmTrack& thePrimary) {
   // secondary: only possible is e-/e+ or gamma at the moemnt
   const int numSecElectron = theTLData.GetNumSecondaryElectronTrack();
   const int numSecGamma    = theTLData.GetNumSecondaryGammaTrack();
@@ -344,7 +325,7 @@ void SteppingLoop::StackSecondaries(G4HepEmTLData& theTLData, TrackStack& theTra
 }
 
 
-void SteppingLoop::SteppingAction(Results& theResult, const G4HepEmTrack& theTrack, const Box* /*currentVolume*/, G4double currentPhysStepLength, int indxLayer, int indxAbsorber, int /*eventID*/, int /*stepID*/) {
+void SteppingLoopSphere::SteppingAction(Results& theResult, const G4HepEmTrack& theTrack, const Sphere* /*currentVolume*/, G4double currentPhysStepLength, int indxLayer, int indxAbsorber, int /*eventID*/, int /*stepID*/) {
   if (indxLayer < 0) return;
   //
   const G4double edep = theTrack.GetEnergyDeposit();
@@ -373,19 +354,19 @@ void SteppingLoop::SteppingAction(Results& theResult, const G4HepEmTrack& theTra
 
 
 // some utilities to modify 3vectors
-void SteppingLoop::Set3Vect(G4double* v, G4double to) {
+void SteppingLoopSphere::Set3Vect(G4double* v, G4double to) {
   v[0] = to;
   v[1] = to;
   v[2] = to;
 }
 
-void SteppingLoop::Set3Vect(G4double* v, const G4double* to) {
+void SteppingLoopSphere::Set3Vect(G4double* v, const G4double* to) {
   v[0] = to[0];
   v[1] = to[1];
   v[2] = to[2];
 }
 
-void SteppingLoop::AddTo3Vect(G4double* v, const G4double* u, G4double scale) {
+void SteppingLoopSphere::AddTo3Vect(G4double* v, const G4double* u, G4double scale) {
   v[0] += scale*u[0];
   v[1] += scale*u[1];
   v[2] += scale*u[2];
