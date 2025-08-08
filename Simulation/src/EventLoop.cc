@@ -20,7 +20,7 @@
 #include <iostream>
 
 
-void EventLoop::ProcessEvents(G4HepEmTLData& theTLData, G4HepEmState& theState, PrimaryGenerator& thePrimaryGenerator, Geometry& theGeometry, Results& theResult, int numEventToSimulate, int verbosity) {
+void EventLoop::ProcessEvents(G4HepEmTLData& theTLData, G4HepEmState& theState, PrimaryGenerator& thePrimaryGenerator, Geometry& theGeometry, Results& theResult, int numEventToSimulate, int verbosity, G4double threshold) {
   //
   // first create the container for the tracks, i.e. the track-stack:
   // - before and at the end of a given event processing: empty
@@ -131,7 +131,7 @@ void EventLoop::ProcessEvents(G4HepEmTLData& theTLData, G4HepEmState& theState, 
       if (trackType == 0) { // the next track is a gamma
         SteppingLoop::GammaStepper(theTLData, theState, theTrackStack, theGeometry, theResult, eventID);
       } else {              // the next track is an e- or e+
-        SteppingLoop::ElectronStepper(theTLData, theState, theTrackStack, theGeometry, theResult, eventID);
+        SteppingLoop::ElectronStepper(theTLData, theState, theTrackStack, theGeometry, theResult, eventID, threshold);
       }
       // - invoke the end of tracking action when the end of its simulation history is reached
       EndOfTrackingAction(theResult, *nextTrack);

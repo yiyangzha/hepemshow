@@ -25,7 +25,7 @@ struct InputParameters {
 
   /** CTR with default values: default geometry, primary and event configuirations (see below) with
     * pre-generated data files expected at `../data/hepem_data` relative to the `HepEmShow` executable.*/
-  InputParameters() : fG4HepEmDataFile("../data/hepem_data"), fRunVerbosity(1) {}
+  InputParameters() : fG4HepEmDataFile("../data/hepem_data"), fRunVerbosity(1), fThreshold(0.1) {}  //FIX
 
 
   /** The geometry related input arguments.*/
@@ -66,6 +66,7 @@ struct InputParameters {
   PrimaryAndEvents fPrimaryAndEvents; ///< the primary partcile and events related configuration
   std::string      fG4HepEmDataFile;  ///< the pre-generated data file (with path)
   int              fRunVerbosity;     ///< level of printout verbosity duing setting up: nothing when < 1.
+  G4double fThreshold;        // FIX
   #ifdef CODI_REVERSE
     std::vector<double> barEdep;     ///< Bar values of the energy depositions
   #endif
@@ -90,6 +91,7 @@ void PrintParameters (const struct InputParameters& theParam) {
   std::cout << "     --- Additional configuration: " << std::endl;
   std::cout << "         - g4hepem-data-file    : "     << theParam.fG4HepEmDataFile  << std::endl;
   std::cout << "         - run-verbosity        : "     << theParam.fRunVerbosity     << std::endl;
+  std::cout << "         - threshold            : "     << theParam.fThreshold        << std::endl; //FIX
 
 }
 
@@ -112,6 +114,7 @@ static struct option options[] = {
     {"edep-bars             (bar values of edeps, in [MeV] units)           - default:: 0:0:...:0", required_argument, 0, 'b'},
   #endif
   {"run-verbosity         (verbosity of run information: nothing when 0)  - default: 1"      , required_argument, 0, 'v'},
+  {"threshold             (FIX: threshold for energy deposition in [MeV]) - default: 0.1"    , required_argument, 0, 'r'},
   {"help"                                                                                    , no_argument      , 0, 'h'},
   {0, 0, 0, 0}
 };
@@ -164,7 +167,7 @@ static inline G4double parseRealInput(const char* arg){
 void GetOpt(int argc, char *argv[], InputParameters& param) {
   while (true) {
     int c, optidx = 0;
-    c = getopt_long(argc, argv, "hl:a:g:t:p:e:n:s:d:v:b:", options, &optidx);
+    c = getopt_long(argc, argv, "hl:a:g:t:p:e:n:s:d:v:b:r:", options, &optidx);
     if (c == -1)
       break;
     switch (c) {
@@ -216,6 +219,10 @@ void GetOpt(int argc, char *argv[], InputParameters& param) {
        #else
           std::cerr << "Ignoring -b argument, as this is a not a reverse-AD build." << std::endl;
        #endif
+       break;
+    
+    case 'r':
+       param.fThreshold = parseRealInput(optarg); // FIX
        break;
 
     case 'h':

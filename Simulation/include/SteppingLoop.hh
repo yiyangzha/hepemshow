@@ -122,7 +122,7 @@ public:
    * @param theResult the data structure that holds all the infomation needs to be collected during the simulation. It might be updated after each simulation step by calling the `SteppingAction` method.
    * @param eventID ID of the currently simulated event, i.e. the one to which the given input \f$e^-/e^+\f$ track belongs to
    */
-  static void ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theState, TrackStack& theTrackStack, Geometry& theGeometry, Results& theResult, int eventID);
+  static void ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theState, TrackStack& theTrackStack, Geometry& theGeometry, Results& theResult, int eventID, G4double threshold);
 
 
 private:

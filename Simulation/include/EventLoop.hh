@@ -49,7 +49,7 @@ public:
    * @param numEventToSimulate number of events required to be simulated
    * @param verbosity to control the verbosity of printouts reporting progress and state of the event processing
    */
-  static void ProcessEvents(G4HepEmTLData& theTLData, G4HepEmState& theState, PrimaryGenerator& thePrimaryGenerator, Geometry& theGeometry, Results& theResult, int numEventToSimulate, int verbosity);
+  static void ProcessEvents(G4HepEmTLData& theTLData, G4HepEmState& theState, PrimaryGenerator& thePrimaryGenerator, Geometry& theGeometry, Results& theResult, int numEventToSimulate, int verbosity, G4double threshold);
 
 private:
   EventLoop() = delete;
