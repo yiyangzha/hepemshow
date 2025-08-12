@@ -129,7 +129,7 @@ void SteppingLoop::GammaStepper(G4HepEmTLData& theTLData, G4HepEmState& theState
 }
 
 
-void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theState, TrackStack& theTrackStack, Geometry& theGeometry, Results& theResult, int eventID, G4double threshold) {
+void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theState, TrackStack& theTrackStack, Geometry& theGeometry, Results& theResult, int eventID, G4double threshold, G4double threshold2) {
   // NOTE: the start tracking procedure (reset the track and the rng) was already done in the EventLoop
   G4HepEmTrack*           theTrack = theTLData.GetPrimaryElectronTrack()->GetTrack();
   G4HepEmMSCTrackData*  theMSCData = theTLData.GetPrimaryElectronTrack()->GetMSCTrackData();
@@ -154,7 +154,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
   while (theTrack->GetEKin() > 0.0) {
     if (lastDirection * theTrack->GetDirection()[0] < -1e-8) nBackScatter++;  //FIX
     lastDirection = theTrack->GetDirection()[0];  //FIX
-    if (nBackScatter > 1 || theTrack->GetDirection()[0] < threshold) //FIX
+    if (nBackScatter > 1 || (theTrack->GetDirection()[0] < threshold && theTrack->GetDirection()[0] > threshold2)) //FIX
     {
       theTrack->SetDirection(stop_grad(theTrack->GetDirection()[0]), stop_grad(theTrack->GetDirection()[1]), stop_grad(theTrack->GetDirection()[2]));
       theTrack->SetPosition(stop_grad(theTrack->GetPosition()[0]), stop_grad(theTrack->GetPosition()[1]), stop_grad(theTrack->GetPosition()[2]));

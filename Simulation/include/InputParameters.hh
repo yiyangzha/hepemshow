@@ -67,6 +67,7 @@ struct InputParameters {
   std::string      fG4HepEmDataFile;  ///< the pre-generated data file (with path)
   int              fRunVerbosity;     ///< level of printout verbosity duing setting up: nothing when < 1.
   G4double fThreshold;        // FIX
+  G4double fThreshold2;       // FIX
   #ifdef CODI_REVERSE
     std::vector<double> barEdep;     ///< Bar values of the energy depositions
   #endif
@@ -92,6 +93,7 @@ void PrintParameters (const struct InputParameters& theParam) {
   std::cout << "         - g4hepem-data-file    : "     << theParam.fG4HepEmDataFile  << std::endl;
   std::cout << "         - run-verbosity        : "     << theParam.fRunVerbosity     << std::endl;
   std::cout << "         - threshold            : "     << theParam.fThreshold        << std::endl; //FIX
+  std::cout << "         - threshold2           : "     << theParam.fThreshold2       << std::endl; //FIX
 
 }
 
@@ -114,7 +116,8 @@ static struct option options[] = {
     {"edep-bars             (bar values of edeps, in [MeV] units)           - default:: 0:0:...:0", required_argument, 0, 'b'},
   #endif
   {"run-verbosity         (verbosity of run information: nothing when 0)  - default: 1"      , required_argument, 0, 'v'},
-  {"threshold             (FIX: threshold for energy deposition in [MeV]) - default: 0.1"    , required_argument, 0, 'r'},
+  {"threshold             (FIX: threshold for energy deposition in [MeV]) - default: 0.1"    , required_argument, 0, 'f'},
+  {"threshold2            (FIX: threshold for energy deposition in [MeV]) - default:-1.0"    , required_argument, 0, 'k'},
   {"help"                                                                                    , no_argument      , 0, 'h'},
   {0, 0, 0, 0}
 };
@@ -167,7 +170,7 @@ static inline G4double parseRealInput(const char* arg){
 void GetOpt(int argc, char *argv[], InputParameters& param) {
   while (true) {
     int c, optidx = 0;
-    c = getopt_long(argc, argv, "hl:a:g:t:p:e:n:s:d:v:b:r:", options, &optidx);
+    c = getopt_long(argc, argv, "hl:a:g:t:p:e:n:s:d:v:b:f:k:", options, &optidx);
     if (c == -1)
       break;
     switch (c) {
@@ -221,8 +224,11 @@ void GetOpt(int argc, char *argv[], InputParameters& param) {
        #endif
        break;
     
-    case 'r':
+    case 'f':
        param.fThreshold = parseRealInput(optarg); // FIX
+       break;
+    case 'k':
+       param.fThreshold2 = parseRealInput(optarg); // FIX
        break;
 
     case 'h':

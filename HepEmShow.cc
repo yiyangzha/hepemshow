@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
 
 
   // here we start the event processing: generate the required number of event and simulte each event.
-  EventLoop::ProcessEvents(*theTLData, *theState, thePrimaryGenerator, theGeometry, theResult, theInputParameters.fPrimaryAndEvents.fNumEvents, theInputParameters.fRunVerbosity, theInputParameters.fThreshold);
+  EventLoop::ProcessEvents(*theTLData, *theState, thePrimaryGenerator, theGeometry, theResult, theInputParameters.fPrimaryAndEvents.fNumEvents, theInputParameters.fRunVerbosity, theInputParameters.fThreshold, theInputParameters.fThreshold2);
 
 
   // here we summarise the results and write them to file (the histograms) or to the screen
