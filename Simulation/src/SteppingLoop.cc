@@ -154,11 +154,6 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
   while (theTrack->GetEKin() > 0.0) {
     if (lastDirection * theTrack->GetDirection()[0] < -1e-8) nBackScatter++;  //FIX
     lastDirection = theTrack->GetDirection()[0];  //FIX
-    if (nBackScatter > 1 || (theTrack->GetDirection()[0] < threshold && theTrack->GetDirection()[0] > threshold2)) //FIX
-    {
-      theTrack->SetDirection(stop_grad(theTrack->GetDirection()[0]), stop_grad(theTrack->GetDirection()[1]), stop_grad(theTrack->GetDirection()[2]));
-      theTrack->SetPosition(stop_grad(theTrack->GetPosition()[0]), stop_grad(theTrack->GetPosition()[1]), stop_grad(theTrack->GetPosition()[2]));
-    }
     // calculate distance to boundary from the pre-step point: will locate the pont
     // NOTE: this should never be zero as zero means that the point is outside of the volume
     //       (taking into account the direction and tolerance)
@@ -168,7 +163,7 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     // set the local position = global position (will be local after CalculateDistanceToOut)
     Set3Vect(localPosition, globalPosition);
 
-    const G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
+    G4double distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
     // STOP HERE IF `distToBoundary = 1.0E+20` i.e. we are going out from the Calorimeter
     if (distToBoundary > 1.0E+10) {
       return;
@@ -213,6 +208,17 @@ void SteppingLoop::ElectronStepper(G4HepEmTLData& theTLData, G4HepEmState& theSt
     if (distToPhysics < distToBoundary) {
       stepLength = distToPhysics;
       onBoundary = false;
+    }
+    if (onBoundary && (nBackScatter > 1 || (theTrack->GetDirection()[0] < threshold && theTrack->GetDirection()[0] > threshold2))) //FIX
+    {
+      theTrack->SetDirection(stop_grad(theTrack->GetDirection()[0]), stop_grad(theTrack->GetDirection()[1]), stop_grad(theTrack->GetDirection()[2]));
+      theTrack->SetPosition(stop_grad(theTrack->GetPosition()[0]), stop_grad(theTrack->GetPosition()[1]), stop_grad(theTrack->GetPosition()[2]));
+      globalPosition = theTrack->GetPosition();
+      curDirection   = theTrack->GetDirection();
+      // set the local position = global position (will be local after CalculateDistanceToOut)
+      Set3Vect(localPosition, globalPosition);
+      distToBoundary = theGeometry.CalculateDistanceToOut(localPosition, curDirection, &currentVolume, &indxLayer, &indxAbs);
+      stepLength = distToBoundary;
     }
     // Apply a small push if the step length is zero.
     // NOTE: it can happen that we are actually (logically) out of the volume
